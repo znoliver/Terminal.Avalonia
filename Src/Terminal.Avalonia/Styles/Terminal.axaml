@@ -1,0 +1,27 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:controls="https://github.com/znoliver/Terminal.Avalonia">
+    <ControlTheme x:Key="{x:Type controls:Terminal}" TargetType="{x:Type controls:Terminal}">
+        <Setter Property="Foreground" Value="White" />
+        <Setter Property="FontSize" Value="18" />
+        <Setter Property="Template">
+            <ControlTemplate>
+                <ScrollViewer Name="PART_ScrollViewer" Background="{TemplateBinding Background}">
+                    <controls:TerminalTextPresenter Name="PART_TextPresenter"
+                                                    Text="{TemplateBinding Text, Mode=TwoWay}"
+                                                    CaretIndex="{TemplateBinding CaretIndex}"
+                                                    SelectionStart="{TemplateBinding SelectionStart}"
+                                                    SelectionEnd="{TemplateBinding SelectionEnd}"
+                                                    TextAlignment="{TemplateBinding TextAlignment}"
+                                                    TextWrapping="{TemplateBinding TextWrapping}"
+                                                    LineHeight="{TemplateBinding LineHeight}"
+                                                    LetterSpacing="{TemplateBinding LetterSpacing}"
+                                                    Foreground="{TemplateBinding Foreground}"
+                                                    CaretBrush="{TemplateBinding Foreground}"
+                                                    FontSize="{TemplateBinding FontSize}"
+                                                    FontFamily="{TemplateBinding FontFamily}" />
+                </ScrollViewer>
+            </ControlTemplate>
+        </Setter>
+    </ControlTheme>
+</ResourceDictionary>

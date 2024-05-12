@@ -1,0 +1,11 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:terminal="https://github.com/znoliver/Terminal.Avalonia"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        Icon="Assets\Terminal.png"
+        x:Class="Example.Avalonia.MainWindow"
+        Title="Example.Avalonia">
+    <terminal:Terminal></terminal:Terminal>
+</Window>
