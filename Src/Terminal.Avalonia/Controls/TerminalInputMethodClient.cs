@@ -130,14 +130,14 @@ internal class TerminalInputMethodClient : TextInputMethodClient
         {
             oldPresenter.ClearValue(TextPresenter.PreeditTextProperty);
 
-            oldPresenter.CaretBoundsChanged -= (s, e) => RaiseCursorRectangleChanged();
+            oldPresenter.CaretBoundsChanged -= OnCaretBoundsChanged;
         }
 
         _presenter = presenter;
 
         if (_presenter != null)
         {
-            _presenter.CaretBoundsChanged += (s, e) => RaiseCursorRectangleChanged();
+            _presenter.CaretBoundsChanged += OnCaretBoundsChanged;
         }
 
         RaiseTextViewVisualChanged();
@@ -189,4 +189,6 @@ internal class TerminalInputMethodClient : TextInputMethodClient
             RaiseSelectionChanged();
         }
     }
+
+    private void OnCaretBoundsChanged(object? sender, EventArgs e) => RaiseCursorRectangleChanged();
 }

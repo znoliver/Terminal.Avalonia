@@ -12,8 +12,6 @@
                                                     CaretIndex="{TemplateBinding CaretIndex}"
                                                     SelectionStart="{TemplateBinding SelectionStart}"
                                                     SelectionEnd="{TemplateBinding SelectionEnd}"
-                                                    TextAlignment="{TemplateBinding TextAlignment}"
-                                                    TextWrapping="{TemplateBinding TextWrapping}"
                                                     LineHeight="{TemplateBinding LineHeight}"
                                                     LetterSpacing="{TemplateBinding LetterSpacing}"
                                                     Foreground="{TemplateBinding Foreground}"

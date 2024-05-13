@@ -12,55 +12,33 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Media.TextFormatting;
-using Avalonia.Media.TextFormatting.Unicode;
 using Avalonia.Metadata;
 using Avalonia.Threading;
 using Terminal.Avalonia.Utilities;
-using Terminal.Core.VirtualTerminal;
-using Terminal.Core.XTermParser;
 
 namespace Terminal.Avalonia.Controls;
 
-[TemplatePart("PART_TextPresenter", typeof(TerminalTextPresenter))]
-[TemplatePart("PART_ScrollViewer", typeof(ScrollViewer))]
+[TemplatePart(TextPresenterName, typeof(TerminalTextPresenter))]
+[TemplatePart(ScrollViewerName, typeof(ScrollViewer))]
 public class Terminal : TemplatedControl
 {
-    /// <summary>
-    /// Defines the <see cref="AcceptsReturn"/> property
-    /// </summary>
-    public static readonly StyledProperty<bool> AcceptsReturnProperty =
-        AvaloniaProperty.Register<Terminal, bool>(nameof(AcceptsReturn));
+    private const string TextPresenterName = "PART_TextPresenter";
+    private const string ScrollViewerName = "PART_ScrollViewer";
+    private static readonly string[] InvalidCharacters = ["\u007f"];
+
+    #region Avalonia Properties
 
     /// <summary>
     /// Defines the <see cref="CaretIndex"/> property
     /// </summary>
     public static readonly StyledProperty<int> CaretIndexProperty =
-        AvaloniaProperty.Register<Terminal, int>(nameof(CaretIndex),
-            coerce: CoerceCaretIndex);
-
-    /// <summary>
-    /// Defines the <see cref="IsReadOnly"/> property
-    /// </summary>
-    public static readonly StyledProperty<bool> IsReadOnlyProperty =
-        AvaloniaProperty.Register<Terminal, bool>(nameof(IsReadOnly));
+        AvaloniaProperty.Register<Terminal, int>(nameof(CaretIndex), coerce: CoerceCaretIndex);
 
     /// <summary>
     /// Defines the <see cref="MediaTypeNames.Text"/> property
     /// </summary>
     public static readonly StyledProperty<string?> TextProperty =
-        TextBlock.TextProperty.AddOwner<Terminal>(new(
-            coerce: CoerceText,
-            defaultBindingMode: BindingMode.TwoWay,
-            enableDataValidation: true));
-
-    /// <summary>
-    /// Defines the <see cref="TextAlignment"/> property
-    /// </summary>
-    public static readonly StyledProperty<TextAlignment> TextAlignmentProperty =
-        TextBlock.TextAlignmentProperty.AddOwner<Terminal>();
-
-    public static readonly StyledProperty<TextWrapping> TextWrappingProperty =
-        TextBlock.TextWrappingProperty.AddOwner<Terminal>();
+        TextBlock.TextProperty.AddOwner<Terminal>(new(defaultBindingMode: BindingMode.TwoWay));
 
     /// <summary>
     /// Defines see <see cref="TextPresenter.LineHeight"/> property.
@@ -78,15 +56,13 @@ public class Terminal : TemplatedControl
     /// Defines the <see cref="SelectionStart"/> property
     /// </summary>
     public static readonly StyledProperty<int> SelectionStartProperty =
-        AvaloniaProperty.Register<Terminal, int>(nameof(SelectionStart),
-            coerce: CoerceCaretIndex);
+        AvaloniaProperty.Register<Terminal, int>(nameof(SelectionStart), coerce: CoerceCaretIndex);
 
     /// <summary>
     /// Defines the <see cref="SelectionEnd"/> property
     /// </summary>
     public static readonly StyledProperty<int> SelectionEndProperty =
-        AvaloniaProperty.Register<Terminal, int>(nameof(SelectionEnd),
-            coerce: CoerceCaretIndex);
+        AvaloniaProperty.Register<Terminal, int>(nameof(SelectionEnd), coerce: CoerceCaretIndex);
 
     /// <summary>
     /// Defines the <see cref="MaxLength"/> property
@@ -104,121 +80,21 @@ public class Terminal : TemplatedControl
     /// Defines the <see cref="TextChanged"/> event.
     /// </summary>
     public static readonly RoutedEvent<TextChangedEventArgs> TextChangedEvent =
-        RoutedEvent.Register<TextBox, TextChangedEventArgs>(
-            nameof(TextChanged), RoutingStrategies.Bubble);
+        RoutedEvent.Register<TextBox, TextChangedEventArgs>(nameof(TextChanged), RoutingStrategies.Bubble);
 
     /// <summary>
     /// Defines the <see cref="TextChanging"/> event.
     /// </summary>
     public static readonly RoutedEvent<TextChangingEventArgs> TextChangingEvent =
-        RoutedEvent.Register<TextBox, TextChangingEventArgs>(
-            nameof(TextChanging), RoutingStrategies.Bubble);
+        RoutedEvent.Register<TextBox, TextChangingEventArgs>(nameof(TextChanging), RoutingStrategies.Bubble);
 
-    private TerminalTextPresenter? _presenter;
-    private ScrollViewer? _scrollViewer;
-    private readonly TerminalInputMethodClient _imClient = new();
-    private static readonly string[] invalidCharacters = ["\u007f"];
+    #endregion
 
-    static Terminal()
-    {
-        FocusableProperty.OverrideDefaultValue<Terminal>(true);
-        BackgroundProperty.OverrideDefaultValue<Terminal>(new SolidColorBrush(Colors.Black));
-        TextWrappingProperty.OverrideDefaultValue<Terminal>(TextWrapping.Wrap);
-
-        TextInputMethodClientRequestedEvent.AddClassHandler<Terminal>((terminal, e) =>
-        {
-            if (!terminal.IsReadOnly)
-            {
-                e.Client = terminal._imClient;
-            }
-        });
-    }
-
-    public Terminal()
-    {
-    }
-
-    /// <summary>
-    /// Gets or sets the index of the text caret
-    /// </summary>
-    public int CaretIndex
-    {
-        get => GetValue(CaretIndexProperty);
-        set => SetValue(CaretIndexProperty, value);
-    }
-
-    /// <summary>
-    /// Gets or sets a value whether this TextBox is read-only
-    /// </summary>
-    public bool IsReadOnly
-    {
-        get => GetValue(IsReadOnlyProperty);
-        set => SetValue(IsReadOnlyProperty, value);
-    }
-
-    /// <summary>
-    /// Gets or sets the Text content of the TextBox
-    /// </summary>
-    [Content]
-    public string? Text
-    {
-        get => GetValue(TextProperty);
-        set => SetValue(TextProperty, value);
-    }
-
-    private static string? CoerceText(AvaloniaObject sender, string? value)
-    {
-        // var textBox = (TextBox)sender;
-        return value;
-    }
-
-    /// <summary>
-    /// Gets or sets the starting position of the text selected in the TextBox
-    /// </summary>
-    public int SelectionStart
-    {
-        get => GetValue(SelectionStartProperty);
-        set => SetValue(SelectionStartProperty, value);
-    }
-
-    private void OnSelectionStartChanged(AvaloniaPropertyChangedEventArgs e)
-    {
-        //TODO: UpdateCommandStates();
-
-        var value = e.GetNewValue<int>();
-        if (SelectionEnd == value && CaretIndex != value)
-        {
-            SetCurrentValue(CaretIndexProperty, value);
-        }
-    }
-
-    /// <summary>
-    /// Gets or sets the end position of the text selected in the TextBox
-    /// </summary>
-    /// <remarks>
-    /// When the SelectionEnd is equal to <see cref="SelectionStart"/>, there is no 
-    /// selected text and it marks the caret position
-    /// </remarks>
-    public int SelectionEnd
-    {
-        get => GetValue(SelectionEndProperty);
-        set => SetValue(SelectionEndProperty, value);
-    }
-
-    private void OnSelectionEndChanged(AvaloniaPropertyChangedEventArgs e)
-    {
-        //TODO: UpdateCommandStates();
-
-        var value = e.GetNewValue<int>();
-        if (SelectionStart == value && CaretIndex != value)
-        {
-            SetCurrentValue(CaretIndexProperty, value);
-        }
-    }
+    #region Coreces
 
     internal static int CoerceCaretIndex(AvaloniaObject sender, int value)
     {
-        var text = sender.GetValue(TextProperty); // method also used by TextPresenter and SelectableTextBlock
+        var text = sender.GetValue(TextProperty);
 
         if (text == null)
         {
@@ -231,97 +107,23 @@ public class Terminal : TemplatedControl
         {
             return 0;
         }
-        else if (value > length)
+
+        if (value > length)
         {
             return length;
         }
-        else if (value > 0 && text[value - 1] == '\r' && value < length && text[value] == '\n')
+
+        if (value > 0 && text[value - 1] == '\r' && value < length && text[value] == '\n')
         {
             return value + 1;
         }
-        else
-        {
-            return value;
-        }
+
+        return value;
     }
 
-    /// <summary>
-    /// Clears the current selection, maintaining the <see cref="CaretIndex"/>
-    /// </summary>
-    public void ClearSelection()
-    {
-        SetCurrentValue(CaretIndexProperty, SelectionStart);
-        SetCurrentValue(SelectionEndProperty, SelectionStart);
-    }
+    #endregion
 
-    public void SelectAll()
-    {
-        SetCurrentValue(SelectionStartProperty, 0);
-        SetCurrentValue(SelectionEndProperty, Text?.Length ?? 0);
-    }
-
-    /// <summary>
-    /// Gets or sets the maximum number of visible lines.
-    /// </summary>
-    public int MaxLength
-    {
-        get => GetValue(MaxLengthProperty);
-        set => SetValue(MaxLengthProperty, value);
-    }
-
-    /// <summary>
-    /// Gets or sets the maximum number of lines the TextBox can contain
-    /// </summary>
-    public int MaxLines
-    {
-        get => GetValue(MaxLinesProperty);
-        set => SetValue(MaxLinesProperty, value);
-    }
-
-    /// <summary>
-    /// Gets or sets a value that determines whether the TextBox allows and displays newline or return characters
-    /// </summary>
-    public bool AcceptsReturn
-    {
-        get => GetValue(AcceptsReturnProperty);
-        set => SetValue(AcceptsReturnProperty, value);
-    }
-
-    /// <summary>
-    /// Gets or sets the <see cref="Avalonia.Media.TextAlignment"/> of the TextBox
-    /// </summary>
-    public TextAlignment TextAlignment
-    {
-        get => GetValue(TextAlignmentProperty);
-        set => SetValue(TextAlignmentProperty, value);
-    }
-
-    /// <summary>
-    /// Gets or sets the <see cref="Avalonia.Media.TextWrapping"/> of the TextBox
-    /// </summary>
-    public TextWrapping TextWrapping
-    {
-        get => GetValue(TextWrappingProperty);
-        set => SetValue(TextWrappingProperty, value);
-    }
-
-    /// <summary>
-    /// Gets or sets the line height.
-    /// </summary>
-    public double LineHeight
-    {
-        get => GetValue(LineHeightProperty);
-        set => SetValue(LineHeightProperty, value);
-    }
-
-    /// <summary>
-    /// Gets or sets the spacing between characters
-    /// </summary>
-    public double LetterSpacing
-    {
-        get => GetValue(LetterSpacingProperty);
-        set => SetValue(LetterSpacingProperty, value);
-    }
+    #region Events
 
     /// <summary>
     /// Occurs asynchronously after text changes and the new text is rendered.
@@ -344,14 +146,109 @@ public class Terminal : TemplatedControl
         remove => RemoveHandler(TextChangingEvent, value);
     }
 
+    #endregion
+
+    private TerminalTextPresenter? _presenter;
+    private ScrollViewer? _scrollViewer;
+    private readonly TerminalInputMethodClient _imClient = new();
+
+    static Terminal()
+    {
+        FocusableProperty.OverrideDefaultValue<Terminal>(true);
+        BackgroundProperty.OverrideDefaultValue<Terminal>(new SolidColorBrush(Colors.Black));
+
+        TextInputMethodClientRequestedEvent.AddClassHandler<Terminal>((terminal, e) => e.Client = terminal._imClient);
+    }
+
+    #region Properties
+
+    /// <summary>
+    /// Gets or sets the index of the text caret
+    /// </summary>
+    public int CaretIndex
+    {
+        get => GetValue(CaretIndexProperty);
+        set => SetValue(CaretIndexProperty, value);
+    }
+
+    /// <summary>
+    /// Gets or sets the Text content of the Terminal
+    /// </summary>
+    [Content]
+    public string? Text
+    {
+        get => GetValue(TextProperty);
+        set => SetValue(TextProperty, value);
+    }
+
+    /// <summary>
+    /// Gets or sets the line height.
+    /// </summary>
+    public double LineHeight
+    {
+        get => GetValue(LineHeightProperty);
+        set => SetValue(LineHeightProperty, value);
+    }
+
+    /// <summary>
+    /// Gets or sets the spacing between characters
+    /// </summary>
+    public double LetterSpacing
+    {
+        get => GetValue(LetterSpacingProperty);
+        set => SetValue(LetterSpacingProperty, value);
+    }
+
+    /// <summary>
+    /// Gets or sets the starting position of the text selected in the Terminal
+    /// </summary>
+    public int SelectionStart
+    {
+        get => GetValue(SelectionStartProperty);
+        set => SetValue(SelectionStartProperty, value);
+    }
+
+    /// <summary>
+    /// Gets or sets the end position of the text selected in the Terminal
+    /// </summary>
+    /// <remarks>
+    /// When the SelectionEnd is equal to <see cref="SelectionStart"/>, there is no 
+    /// selected text and it marks the caret position
+    /// </remarks>
+    public int SelectionEnd
+    {
+        get => GetValue(SelectionEndProperty);
+        set => SetValue(SelectionEndProperty, value);
+    }
+
+    /// <summary>
+    /// Gets or sets the maximum number of visible lines.
+    /// </summary>
+    public int MaxLength
+    {
+        get => GetValue(MaxLengthProperty);
+        set => SetValue(MaxLengthProperty, value);
+    }
+
+    /// <summary>
+    /// Gets or sets the maximum number of lines the Terminal can contain
+    /// </summary>
+    public int MaxLines
+    {
+        get => GetValue(MaxLinesProperty);
+        set => SetValue(MaxLinesProperty, value);
+    }
+
+    #endregion
+
+    #region Overrides
+
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
     {
-        _presenter = e.NameScope.Get<TerminalTextPresenter>("PART_TextPresenter");
-
-        _scrollViewer = e.NameScope.Find<ScrollViewer>("PART_ScrollViewer");
+        _presenter = e.NameScope.Get<TerminalTextPresenter>(TextPresenterName);
+        _scrollViewer = e.NameScope.Find<ScrollViewer>(ScrollViewerName);
 
         _imClient.SetPresenter(_presenter, this);
-
         if (IsFocused)
         {
             _presenter?.ShowCaret();
@@ -362,14 +259,10 @@ public class Terminal : TemplatedControl
     {
         base.OnAttachedToVisualTree(e);
 
-        if (_presenter != null)
+        if (_presenter == null) return;
+        if (IsFocused)
         {
-            if (IsFocused)
-            {
-                _presenter.ShowCaret();
-            }
-
-            _presenter.PropertyChanged += PresenterPropertyChanged;
+            _presenter.ShowCaret();
         }
     }
 
@@ -377,61 +270,24 @@ public class Terminal : TemplatedControl
     {
         base.OnDetachedFromVisualTree(e);
 
-        if (_presenter != null)
-        {
-            _presenter.HideCaret();
-
-            _presenter.PropertyChanged -= PresenterPropertyChanged;
-        }
-
+        _presenter?.HideCaret();
         _imClient.SetPresenter(null, null);
     }
 
-    private void OnCaretIndexChanged(AvaloniaPropertyChangedEventArgs e)
+    protected override void OnGotFocus(GotFocusEventArgs e)
     {
-        // UndoRedoState state;
-        // if (IsUndoEnabled && _undoRedoHelper.TryGetLastState(out state) && state.Text == Text)
-        //     _undoRedoHelper.UpdateLastState();
+        base.OnGotFocus(e);
 
-        var newValue = e.GetNewValue<int>();
-        SetCurrentValue(SelectionStartProperty, newValue);
-        SetCurrentValue(SelectionEndProperty, newValue);
+        _imClient.SetPresenter(_presenter, this);
+        _presenter?.ShowCaret();
     }
 
-    private void PresenterPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
+    protected override void OnLostFocus(RoutedEventArgs e)
     {
-        if (e.Property == TerminalTextPresenter.PreeditTextProperty)
-        {
-            if (string.IsNullOrEmpty(e.OldValue as string) && !string.IsNullOrEmpty(e.NewValue as string))
-            {
-                PseudoClasses.Set(":empty", false);
+        base.OnLostFocus(e);
 
-                DeleteSelection();
-            }
-        }
-    }
-
-    /// <summary>
-    /// Raises both the <see cref="TextChanging"/> and <see cref="TextChanged"/> events.
-    /// </summary>
-    /// <remarks>
-    /// This must be called after the <see cref="Text"/> property is set.
-    /// </remarks>
-    private void RaiseTextChangeEvents()
-    {
-        // Note the following sequence of these events (following WinUI)
-        // 1. TextChanging occurs synchronously when text starts to change but before it is rendered.
-        //    This occurs after the Text property is set.
-        // 2. TextChanged occurs asynchronously after text changes and the new text is rendered.
-
-        var textChangingEventArgs = new TextChangingEventArgs(TextChangingEvent);
-        RaiseEvent(textChangingEventArgs);
-
-        Dispatcher.UIThread.Post(() =>
-        {
-            var textChangedEventArgs = new TextChangedEventArgs(TextChangedEvent);
-            RaiseEvent(textChangedEventArgs);
-        }, DispatcherPriority.Normal);
+        _presenter?.HideCaret();
+        _imClient.SetPresenter(null, null);
     }
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
@@ -484,45 +340,12 @@ public class Terminal : TemplatedControl
         // }
     }
 
-    protected override void OnGotFocus(GotFocusEventArgs e)
-    {
-        base.OnGotFocus(e);
-
-        // when navigating to a textbox via the tab key, select all text if
-        //   1) this textbox is *not* a multiline textbox
-        //   2) this textbox has any text to select
-        // if (e.NavigationMethod == NavigationMethod.Tab &&
-        //     !AcceptsReturn &&
-        //     Text?.Length > 0)
-        // {
-        //     SelectAll();
-        // }
-        //
-        // UpdateCommandStates();
-
-        _imClient.SetPresenter(_presenter, this);
-
-        _presenter?.ShowCaret();
-    }
-
-    protected override void OnLostFocus(RoutedEventArgs e)
-    {
-        base.OnLostFocus(e);
-
-        //TODO:UpdateCommandStates();
-
-        _presenter?.HideCaret();
-
-        _imClient.SetPresenter(null, null);
-    }
-
     protected override void OnTextInput(TextInputEventArgs e)
     {
-        if (!e.Handled)
-        {
-            HandleTextInput(e.Text);
-            e.Handled = true;
-        }
+        if (e.Handled) return;
+
+        HandleTextInput(e.Text);
+        e.Handled = true;
     }
 
     protected override void OnKeyDown(KeyEventArgs e)
@@ -809,13 +632,9 @@ public class Terminal : TemplatedControl
                     break;
 
                 case Key.Enter:
-                    if (AcceptsReturn)
-                    {
-                        // SnapshotUndoRedo();
-                        HandleTextInput(Environment.NewLine);
-                        handled = true;
-                    }
-
+                    // SnapshotUndoRedo();
+                    HandleTextInput(Environment.NewLine);
+                    handled = true;
                     break;
 
                 case Key.Tab:
@@ -844,13 +663,78 @@ public class Terminal : TemplatedControl
         }
     }
 
+    #endregion
+
+    #region Property Changed Handlers
+
+    private void OnCaretIndexChanged(AvaloniaPropertyChangedEventArgs e)
+    {
+        var newValue = e.GetNewValue<int>();
+        SetCurrentValue(SelectionStartProperty, newValue);
+        SetCurrentValue(SelectionEndProperty, newValue);
+    }
+
+    private void OnSelectionStartChanged(AvaloniaPropertyChangedEventArgs e)
+    {
+        //TODO: UpdateCommandStates();
+
+        var value = e.GetNewValue<int>();
+        if (SelectionEnd == value && CaretIndex != value)
+        {
+            SetCurrentValue(CaretIndexProperty, value);
+        }
+    }
+
+    private void OnSelectionEndChanged(AvaloniaPropertyChangedEventArgs e)
+    {
+        //TODO: UpdateCommandStates();
+
+        var value = e.GetNewValue<int>();
+        if (SelectionStart == value && CaretIndex != value)
+        {
+            SetCurrentValue(CaretIndexProperty, value);
+        }
+    }
+
+    #endregion
+
+    private void ClearSelection()
+    {
+        SetCurrentValue(CaretIndexProperty, SelectionStart);
+        SetCurrentValue(SelectionEndProperty, SelectionStart);
+    }
+
+    private void SelectAll()
+    {
+        SetCurrentValue(SelectionStartProperty, 0);
+        SetCurrentValue(SelectionEndProperty, Text?.Length ?? 0);
+    }
+
+    /// <summary>
+    /// Raises both the <see cref="TextChanging"/> and <see cref="TextChanged"/> events.
+    /// </summary>
+    /// <remarks>
+    /// This must be called after the <see cref="Text"/> property is set.
+    /// </remarks>
+    private void RaiseTextChangeEvents()
+    {
+        // Note the following sequence of these events (following WinUI)
+        // 1. TextChanging occurs synchronously when text starts to change but before it is rendered.
+        //    This occurs after the Text property is set.
+        // 2. TextChanged occurs asynchronously after text changes and the new text is rendered.
+
+        var textChangingEventArgs = new TextChangingEventArgs(TextChangingEvent);
+        RaiseEvent(textChangingEventArgs);
+
+        Dispatcher.UIThread.Post(() =>
+        {
+            var textChangedEventArgs = new TextChangedEventArgs(TextChangedEvent);
+            RaiseEvent(textChangedEventArgs);
+        }, DispatcherPriority.Normal);
+    }
+
     private void HandleTextInput(string? input)
     {
-        if (IsReadOnly)
-        {
-            return;
-        }
-
         input = SanitizeInputText(input);
 
         if (string.IsNullOrEmpty(input))
@@ -865,11 +749,11 @@ public class Terminal : TemplatedControl
         var selectionLength = Math.Abs(SelectionStart - SelectionEnd);
         var newLength = input.Length + currentText.Length - selectionLength;
 
-        if (MaxLength > 0 && newLength > MaxLength)
-        {
-            input = input.Remove(Math.Max(0, input.Length - (newLength - MaxLength)));
-            newLength = MaxLength;
-        }
+        // if (MaxLength > 0 && newLength > MaxLength)
+        // {
+        //     input = input.Remove(Math.Max(0, input.Length - (newLength - MaxLength)));
+        //     newLength = MaxLength;
+        // }
 
         if (!string.IsNullOrEmpty(input))
         {
@@ -904,37 +788,13 @@ public class Terminal : TemplatedControl
         if (text is null)
             return null;
 
-        if (!AcceptsReturn)
+        for (var i = 0; i < InvalidCharacters.Length; i++)
         {
-            var lineBreakStart = 0;
-            var graphemeEnumerator = new GraphemeEnumerator(text.AsSpan());
-
-            while (graphemeEnumerator.MoveNext(out var grapheme))
-            {
-                if (grapheme.FirstCodepoint.IsBreakChar)
-                {
-                    break;
-                }
-
-                lineBreakStart += grapheme.Length;
-            }
-
-            // All lines except the first one are discarded when TextBox does not accept Return key
-            text = text.Substring(0, lineBreakStart);
-        }
-
-        for (var i = 0; i < invalidCharacters.Length; i++)
-        {
-            text = text.Replace(invalidCharacters[i], string.Empty);
+            text = text.Replace(InvalidCharacters[i], string.Empty);
         }
 
         return text;
     }
-
-    /// <summary>
-    /// Clears the text in the TextBox
-    /// </summary>
-    public void Clear() => SetCurrentValue(TextProperty, string.Empty);
 
     private (int start, int end) GetSelectionRange()
     {
@@ -944,11 +804,8 @@ public class Terminal : TemplatedControl
         return (Math.Min(selectionStart, selectionEnd), Math.Max(selectionStart, selectionEnd));
     }
 
-    internal bool DeleteSelection()
+    private bool DeleteSelection()
     {
-        if (IsReadOnly)
-            return true;
-
         var (start, end) = GetSelectionRange();
 
         if (start != end)
@@ -1168,13 +1025,5 @@ public class Terminal : TemplatedControl
         {
             SetCurrentValue(SelectionEndProperty, SelectionEnd + 1);
         }
-    }
-
-    private void DealText()
-    {
-        var terminalController = new VirtualTerminalController();
-        var dataConsumer = new DataConsumer(terminalController);
-        
-        // dataConsumer.Push();
     }
 }
