@@ -1,11 +1,9 @@
-﻿using Terminal.Core.VirtualTerminal;
+﻿using System;
+using System.Text;
+using Terminal.Core.VirtualTerminal;
 
 namespace Terminal.Core.XTermParser
 {
-    using System;
-    using System.Text;
-    using Core.VirtualTerminal;
-
     /// <summary>
     /// Consumes pushed data, parses it and processes it through the virtual terminal controller
     /// </summary>
@@ -32,7 +30,7 @@ namespace Terminal.Core.XTermParser
         /// <summary>
         /// The controller which processes the sequences parsed from the stream.
         /// </summary>
-        public IVirtualTerminalController Controller { get; private set; }
+        public IVirtualTerminalController Controller { get; }
 
         /// <summary>
         /// Base constructor
@@ -43,20 +41,20 @@ namespace Terminal.Core.XTermParser
             Controller = controller;
         }
 
-		public void WriteLine(string text) 
-		{
-			Write(text + Environment.NewLine);
-		}
+        public void WriteLine(string text)
+        {
+            Write(text + Environment.NewLine);
+        }
 
-		public void Write(string text, int start, int length) 
-		{
-			Push(Encoding.UTF8.GetBytes(text.ToCharArray(), start, length));
-		}
+        public void Write(string text, int start, int length)
+        {
+            Push(Encoding.UTF8.GetBytes(text.ToCharArray(), start, length));
+        }
 
-		public void Write(string text) 
-		{
-			Push(Encoding.UTF8.GetBytes(text));
-		}
+        public void Write(string text)
+        {
+            Push(Encoding.UTF8.GetBytes(text));
+        }
 
         /// <summary>
         /// Consume raw byte data, parse it and then process it through the controller.
@@ -78,7 +76,9 @@ namespace Terminal.Core.XTermParser
                 {
                     if (SequenceDebugging && ResumingStarvedBuffer)
                     {
-                        System.Diagnostics.Debug.WriteLine("Resuming from starved buffer [" + Encoding.UTF8.GetString(InputBuffer.Buffer).Replace("\u001B", "<esc>") + "]");
+                        System.Diagnostics.Debug.WriteLine("Resuming from starved buffer [" +
+                                                           Encoding.UTF8.GetString(InputBuffer.Buffer)
+                                                               .Replace("\u001B", "<esc>") + "]");
                         ResumingStarvedBuffer = false;
                     }
 
@@ -109,7 +109,7 @@ namespace Terminal.Core.XTermParser
                 }
                 catch (ArgumentException e)
                 {
-                    System.Diagnostics.Debug.WriteLine("Argument exception : " + e.ToString());
+                    System.Diagnostics.Debug.WriteLine("Argument exception : " + e);
                     // We've reached an invalid state of the stream.
                     InputBuffer.ReadRaw();
                     InputBuffer.Commit();

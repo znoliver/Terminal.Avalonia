@@ -20,12 +20,6 @@ internal class TerminalTextPresenter : Control
     public static readonly StyledProperty<int> CaretIndexProperty =
         Terminal.CaretIndexProperty.AddOwner<TerminalTextPresenter>(new(coerce: Terminal.CoerceCaretIndex));
 
-    public static readonly StyledProperty<bool> RevealPasswordProperty =
-        AvaloniaProperty.Register<TerminalTextPresenter, bool>(nameof(RevealPassword));
-
-    public static readonly StyledProperty<char> PasswordCharProperty =
-        AvaloniaProperty.Register<TerminalTextPresenter, char>(nameof(PasswordChar));
-
     public static readonly StyledProperty<IBrush?> SelectionBrushProperty =
         AvaloniaProperty.Register<TerminalTextPresenter, IBrush?>(nameof(SelectionBrush));
 
@@ -267,18 +261,6 @@ internal class TerminalTextPresenter : Control
     {
         get => GetValue(CaretIndexProperty);
         set => SetValue(CaretIndexProperty, value);
-    }
-
-    public char PasswordChar
-    {
-        get => GetValue(PasswordCharProperty);
-        set => SetValue(PasswordCharProperty, value);
-    }
-
-    public bool RevealPassword
-    {
-        get => GetValue(RevealPasswordProperty);
-        set => SetValue(RevealPasswordProperty, value);
     }
 
     public IBrush? SelectionBrush
@@ -535,15 +517,7 @@ internal class TerminalTextPresenter : Control
             }
         }
 
-        if (PasswordChar != default(char) && !RevealPassword)
-        {
-            result = CreateTextLayoutInternal(_constraint, new string(PasswordChar, text?.Length ?? 0), typeface,
-                textStyleOverrides);
-        }
-        else
-        {
-            result = CreateTextLayoutInternal(_constraint, text, typeface, textStyleOverrides);
-        }
+        result = CreateTextLayoutInternal(_constraint, text, typeface, textStyleOverrides);
 
         return result;
     }
@@ -926,9 +900,7 @@ internal class TerminalTextPresenter : Control
             case nameof(SelectionStart):
             case nameof(SelectionEnd):
             case nameof(SelectionForegroundBrush):
-
-            case nameof(PasswordChar):
-            case nameof(RevealPassword):
+                
             case nameof(FlowDirection):
             {
                 InvalidateTextLayout();

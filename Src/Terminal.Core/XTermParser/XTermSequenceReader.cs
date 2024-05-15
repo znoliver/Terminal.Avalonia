@@ -1,15 +1,11 @@
-﻿using Terminal.Core.Exceptions;
+﻿using System;
+using System.Collections.Generic;
+using Terminal.Core.Exceptions;
 using Terminal.Core.VirtualTerminal.Enums;
 using Terminal.Core.XTermParser.SequenceType;
 
 namespace Terminal.Core.XTermParser
 {
-    using System;
-    using System.Collections.Generic;
-    using Core.Exceptions;
-    using Core.VirtualTerminal.Enums;
-    using Core.XTermParser.SequenceType;
-
     public class XTermSequenceReader
     {
         private static TerminalSequence ConsumeCSI(XTermInputBuffer stream)
@@ -138,10 +134,11 @@ namespace Terminal.Core.XTermParser
                 {
                     if (next == 0x07 || next == 0x9C) // BEL or ST
                     {
-                        if (currentParameter!=-1)
+                        if (currentParameter != -1)
                         {
                             Parameters.Add(currentParameter);
                         }
+
                         var osc = new OscSequence
                         {
                             Parameters = Parameters,
@@ -190,7 +187,8 @@ namespace Terminal.Core.XTermParser
                     else if (next == '$' || next == '"' || next == ' ')
                     {
                         if (modifier.HasValue)
-                            throw new EscapeSequenceException("There appears to be two modifiers in a row", stream.Stacked);
+                            throw new EscapeSequenceException("There appears to be two modifiers in a row",
+                                stream.Stacked);
 
                         if (currentParameter != -1)
                         {
@@ -236,7 +234,7 @@ namespace Terminal.Core.XTermParser
             var next = stream.Read();
 
             ECharacterSize size;
-            switch(next)
+            switch (next)
             {
                 case '3':
                     size = ECharacterSize.DoubleHeightLineTop;
@@ -393,6 +391,7 @@ namespace Terminal.Core.XTermParser
                             characterSet = ECharacterSet.USASCII;
                             break;
                     }
+
                     break;
 
                 default:
@@ -527,7 +526,7 @@ namespace Terminal.Core.XTermParser
 
                 if (readingCommand)
                 {
-                    if (next == 0x07 || next == 0x9C)        // BEL or ST
+                    if (next == 0x07 || next == 0x9C) // BEL or ST
                     {
                         var dcs = new DcsSequence
                         {
@@ -544,10 +543,10 @@ namespace Terminal.Core.XTermParser
 
                         return dcs;
                     }
-                    else if(next == 0x1B)               // ESC
+                    else if (next == 0x1B) // ESC
                     {
                         var stChar = stream.Read();
-                        if(stChar == '\\')
+                        if (stChar == '\\')
                         {
                             var dcs = new DcsSequence
                             {
@@ -565,7 +564,8 @@ namespace Terminal.Core.XTermParser
                             return dcs;
                         }
                         else
-                            throw new EscapeSequenceException("ESC \\ is needed to terminate DCS. Encounterd wrong character.", stream.Stacked);
+                            throw new EscapeSequenceException(
+                                "ESC \\ is needed to terminate DCS. Encounterd wrong character.", stream.Stacked);
                     }
                     else
                     {
@@ -599,7 +599,8 @@ namespace Terminal.Core.XTermParser
                     else if (next == '$' || next == '"' || next == ' ')
                     {
                         if (modifier.HasValue)
-                            throw new EscapeSequenceException("There appears to be two modifiers in a row", stream.Stacked);
+                            throw new EscapeSequenceException("There appears to be two modifiers in a row",
+                                stream.Stacked);
 
                         if (currentParameter != -1)
                         {
@@ -635,19 +636,19 @@ namespace Terminal.Core.XTermParser
             TerminalSequence sequence = null;
             switch (next)
             {
-                case '\u001b':      // ESC
+                case '\u001b': // ESC
                     sequence = ConsumeEscapeSequence(stream);
                     break;
 
-                case '\u008e':      // SS2
+                case '\u008e': // SS2
                     sequence = ConsumeSS2Sequence(stream);
                     break;
 
-                case '\u008f':      // SS3
+                case '\u008f': // SS3
                     sequence = ConsumeSS3Sequence(stream);
                     break;
 
-                case '\u0090':      // DCS
+                case '\u0090': // DCS
                     sequence = ConsumeDeviceControlStringSequence(stream);
                     break;
 

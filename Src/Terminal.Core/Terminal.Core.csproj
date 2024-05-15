@@ -1,18 +1,17 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="15.0">
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;net6.0;net8.0</TargetFrameworks>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Authors>Darren R. Starr</Authors>
+    <Authors></Authors>
     <Company>Telenor Inpli AS</Company>
     <Product>VtNet terminal emulation library</Product>
-    <Version>0.0.2</Version>
-    <Description>A VT100/XTerm style terminal emulator library for the .NET Standard 2.0 framework</Description>
-    <Copyright>2018 Darren R. Starr - Telenor Inpli AS</Copyright>
-    <PackageProjectUrl>https://github.com/darrenstarr/VtNetCore</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/darrenstarr/VtNetCore</RepositoryUrl>
-    <RepositoryType>Github</RepositoryType>
-    <PackageLicenseUrl>https://github.com/darrenstarr/VtNetCore/blob/master/LICENSE</PackageLicenseUrl>
-    <PackageTags>VT-100 VT220 xterm NetCore</PackageTags>
+    <Version></Version>
+    <Description></Description>
+    <Copyright></Copyright>
+    <PackageProjectUrl></PackageProjectUrl>
+    <RepositoryUrl></RepositoryUrl>
+    <RepositoryType></RepositoryType>
+    <PackageLicenseUrl></PackageLicenseUrl>
+    <PackageTags></PackageTags>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="System.Text.Encoding" Version="4.3.0" />

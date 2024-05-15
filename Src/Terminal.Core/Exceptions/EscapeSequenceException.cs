@@ -1,11 +1,9 @@
-﻿using Terminal.Core.XTermParser.SequenceType;
+﻿using System;
+using System.Text;
+using Terminal.Core.XTermParser.SequenceType;
 
 namespace Terminal.Core.Exceptions
 {
-    using System;
-    using System.Text;
-    using Core.XTermParser.SequenceType;
-
     /// <summary>
     /// An exception which is thrown when there is a problem decoding or processing an escape sequence.
     /// </summary>
@@ -34,8 +32,7 @@ namespace Terminal.Core.Exceptions
         /// </summary>
         /// <param name="message">The message for the exception</param>
         /// <param name="buffer">The raw data buffer containing the problem</param>
-        public EscapeSequenceException(string message, byte[] buffer) :
-            base(message)
+        public EscapeSequenceException(string message, byte[] buffer) : base(message)
         {
             Buffer = buffer;
         }
@@ -45,8 +42,7 @@ namespace Terminal.Core.Exceptions
         /// </summary>
         /// <param name="message">The message for the exception</param>
         /// <param name="sequence">The decoded sequence</param>
-        public EscapeSequenceException(string message, TerminalSequence sequence) :
-            base(message)
+        public EscapeSequenceException(string message, TerminalSequence sequence) : base(message)
         {
             Sequence = sequence;
         }

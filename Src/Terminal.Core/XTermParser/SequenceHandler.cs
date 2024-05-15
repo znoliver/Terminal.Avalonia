@@ -1,38 +1,14 @@
-﻿using Terminal.Core.VirtualTerminal;
+﻿using System;
+using Terminal.Core.Models;
+using Terminal.Core.VirtualTerminal;
 using Terminal.Core.XTermParser.SequenceType;
 
 namespace Terminal.Core.XTermParser
 {
-    using System;
-    using Core.VirtualTerminal;
-    using Core.XTermParser.SequenceType;
-
     public class SequenceHandler
     {
-        public enum ESequenceType
-        {
-            Character,
-            CSI,            // Control Sequence Introducer
-            OSC,            // Operating System Command
-            DCS,            // Device Control String
-            SS3,            // Signal Shift Select 3
-            VT52mc,         // VT52 Move Cursor
-            Compliance,     // Compliance
-            CharacterSet,   // Character set
-            Escape,
-            CharacterSize,
-            Unicode
-        }
-
-        public enum Vt52Mode
-        {
-            Irrelevent,
-            Yes,
-            No
-        }
-
         public string Description { get; set; }
-        public ESequenceType SequenceType { get; set; }
+        public TerminalSequenceType SequenceType { get; set; }
         public int ExactParameterCount { get; set; } = -1;
         public int ExactParameterCountOrDefault { get; set; } = -1;
         public int DefaultParamValue { get; set; } = 1;

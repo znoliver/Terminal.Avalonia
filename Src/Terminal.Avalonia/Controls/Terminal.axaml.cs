@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Mime;
+using System.Windows.Input;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Metadata;
@@ -14,6 +15,7 @@ using Avalonia.Media;
 using Avalonia.Media.TextFormatting;
 using Avalonia.Metadata;
 using Avalonia.Threading;
+using Terminal.Avalonia.Models;
 using Terminal.Avalonia.Utilities;
 
 namespace Terminal.Avalonia.Controls;
@@ -76,18 +78,24 @@ public class Terminal : TemplatedControl
     public static readonly StyledProperty<int> MaxLinesProperty =
         AvaloniaProperty.Register<Terminal, int>(nameof(MaxLines));
 
+    public static readonly StyledProperty<ICommand> InputCommandProperty =
+        AvaloniaProperty.Register<Terminal, ICommand>(nameof(InputCommand));
+    
     /// <summary>
     /// Defines the <see cref="TextChanged"/> event.
     /// </summary>
     public static readonly RoutedEvent<TextChangedEventArgs> TextChangedEvent =
-        RoutedEvent.Register<TextBox, TextChangedEventArgs>(nameof(TextChanged), RoutingStrategies.Bubble);
+        RoutedEvent.Register<Terminal, TextChangedEventArgs>(nameof(TextChanged), RoutingStrategies.Bubble);
 
     /// <summary>
     /// Defines the <see cref="TextChanging"/> event.
     /// </summary>
     public static readonly RoutedEvent<TextChangingEventArgs> TextChangingEvent =
-        RoutedEvent.Register<TextBox, TextChangingEventArgs>(nameof(TextChanging), RoutingStrategies.Bubble);
+        RoutedEvent.Register<Terminal, TextChangingEventArgs>(nameof(TextChanging), RoutingStrategies.Bubble);
 
+    public static readonly RoutedEvent<TerminalInputEventArgs> InputEvent =
+        RoutedEvent.Register<Terminal, TerminalInputEventArgs>(nameof(Input), RoutingStrategies.Bubble);
+    
     #endregion
 
     #region Coreces
@@ -146,6 +154,12 @@ public class Terminal : TemplatedControl
         remove => RemoveHandler(TextChangingEvent, value);
     }
 
+    public event EventHandler<TerminalInputEventArgs>? Input
+    {
+        add => AddHandler(InputEvent, value);
+        remove => RemoveHandler(InputEvent, value);
+    }
+    
     #endregion
 
     private TerminalTextPresenter? _presenter;
@@ -239,6 +253,12 @@ public class Terminal : TemplatedControl
         set => SetValue(MaxLinesProperty, value);
     }
 
+    public ICommand InputCommand
+    {
+        get => GetValue(InputCommandProperty);
+        set => SetValue(InputCommandProperty, value);
+    }
+    
     #endregion
 
     #region Overrides

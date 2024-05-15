@@ -1,12 +1,12 @@
-﻿namespace Terminal.Core.XTermParser
-{
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 
+namespace Terminal.Core.XTermParser
+{
     public class XTermInputBuffer
     {
-        public byte [] Buffer { get; private set; }
+        public byte[] Buffer { get; private set; }
 
         private class StreamState
         {
@@ -29,7 +29,7 @@
 
         public EMode Mode { get; set; } = EMode.UTF8;
 
-        public byte [] Stacked
+        public byte[] Stacked
         {
             get
             {
@@ -38,7 +38,7 @@
             }
         }
 
-        public void Add(byte [] data)
+        public void Add(byte[] data)
         {
             if (Buffer == null)
                 Buffer = data;
@@ -113,18 +113,12 @@
 
         public bool AtEnd
         {
-            get
-            {
-                return Buffer == null ? true : (Position >= Buffer.Length);
-            }
+            get { return Buffer == null ? true : (Position >= Buffer.Length); }
         }
 
         public int Remaining
         {
-            get
-            {
-                return Buffer == null ? 0 : (Buffer.Length - Position);
-            }
+            get { return Buffer == null ? 0 : (Buffer.Length - Position); }
         }
 
         public byte PeekAhead(int skip)
@@ -135,9 +129,9 @@
             return Buffer[Position + skip];
         }
 
-        public char Read(bool utf8=false)
+        public char Read(bool utf8 = false)
         {
-            if(utf8)
+            if (utf8)
                 return ReadUtf8();
             return ReadRaw();
         }
@@ -196,7 +190,8 @@
                 )
                 {
                     Position += 4;
-                    return (char)(((first & 0x1F) << 18) | ((second & 0x3F) << 12) | ((third & 0x3F) << 6) | (fourth & 0x3F));
+                    return (char)(((first & 0x1F) << 18) | ((second & 0x3F) << 12) | ((third & 0x3F) << 6) |
+                                  (fourth & 0x3F));
                 }
             }
 
