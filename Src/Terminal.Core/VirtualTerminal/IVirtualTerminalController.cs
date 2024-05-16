@@ -1,4 +1,5 @@
-﻿using Terminal.Core.VirtualTerminal.Enums;
+﻿using System;
+using Terminal.Core.VirtualTerminal.Enums;
 
 namespace Terminal.Core.VirtualTerminal
 {
@@ -11,6 +12,7 @@ namespace Terminal.Core.VirtualTerminal
     public interface IVirtualTerminalController
     {
 
+        
         /// <summary>
         /// Clears the change tracking of the model.
         /// </summary>

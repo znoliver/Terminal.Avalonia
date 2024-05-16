@@ -3,9 +3,15 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:terminal="https://github.com/znoliver/Terminal.Avalonia"
+        xmlns:example="clr-namespace:Example.Avalonia"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         Icon="Assets\Terminal.png"
+        x:DataType="example:MainWindowViewModel"
         x:Class="Example.Avalonia.MainWindow"
         Title="Example.Avalonia">
-    <terminal:Terminal></terminal:Terminal>
+    <Design.DataContext>
+        <example:MainWindowViewModel />
+    </Design.DataContext>
+
+    <terminal:Terminal InputCommand="{Binding InputCommand}" Text="{Binding Text}"/>
 </Window>

@@ -17,6 +17,7 @@ using Avalonia.Metadata;
 using Avalonia.Threading;
 using Terminal.Avalonia.Models;
 using Terminal.Avalonia.Utilities;
+using Terminal.Core.InputParser;
 
 namespace Terminal.Avalonia.Controls;
 
@@ -80,7 +81,7 @@ public class Terminal : TemplatedControl
 
     public static readonly StyledProperty<ICommand> InputCommandProperty =
         AvaloniaProperty.Register<Terminal, ICommand>(nameof(InputCommand));
-    
+
     /// <summary>
     /// Defines the <see cref="TextChanged"/> event.
     /// </summary>
@@ -95,7 +96,7 @@ public class Terminal : TemplatedControl
 
     public static readonly RoutedEvent<TerminalInputEventArgs> InputEvent =
         RoutedEvent.Register<Terminal, TerminalInputEventArgs>(nameof(Input), RoutingStrategies.Bubble);
-    
+
     #endregion
 
     #region Coreces
@@ -159,7 +160,7 @@ public class Terminal : TemplatedControl
         add => AddHandler(InputEvent, value);
         remove => RemoveHandler(InputEvent, value);
     }
-    
+
     #endregion
 
     private TerminalTextPresenter? _presenter;
@@ -258,7 +259,7 @@ public class Terminal : TemplatedControl
         get => GetValue(InputCommandProperty);
         set => SetValue(InputCommandProperty, value);
     }
-    
+
     #endregion
 
     #region Overrides
@@ -343,32 +344,39 @@ public class Terminal : TemplatedControl
         {
             InvalidateMeasure();
         }
-        // else if (change.Property == UndoLimitProperty)
-        // {
-        //     OnUndoLimitChanged(change.GetNewValue<int>());
-        // }
-        // else if (change.Property == IsUndoEnabledProperty && change.GetNewValue<bool>() == false)
-        // {
-        //     // from docs at
-        //     // https://docs.microsoft.com/en-us/dotnet/api/system.windows.controls.primitives.textboxbase.isundoenabled:
-        //     // "Setting this property to false clears the undo stack.
-        //     // Therefore, if you disable undo and then re-enable it, undo commands still do not work
-        //     // because the undo stack was emptied when you disabled undo."
-        //     _undoRedoHelper.Clear();
-        //     _selectedTextChangesMadeSinceLastUndoSnapshot = 0;
-        //     _hasDoneSnapshotOnce = false;
-        // }
     }
 
     protected override void OnTextInput(TextInputEventArgs e)
     {
         if (e.Handled) return;
 
-        HandleTextInput(e.Text);
+        InputCommand?.Execute(e.Text);
+        RaiseInputEvent(e.Text);
         e.Handled = true;
     }
 
     protected override void OnKeyDown(KeyEventArgs e)
+    {
+        if (e.Key is Key.LeftAlt or Key.LeftCtrl or Key.LeftShift or Key.RightAlt or Key.RightCtrl or Key.RightShift)
+        {
+            return;
+        }
+
+        if (e.Key == Key.ImeProcessed)
+        {
+            return;
+        }
+
+        var inputChar = string.IsNullOrEmpty(e.KeySymbol)
+            ? DataProducer.Produce(KeyMaps.GetKey(e.Key), KeyMaps.GetModifiers(e.KeyModifiers)).ToString()
+            : e.KeySymbol;
+
+        InputCommand?.Execute(inputChar);
+        RaiseInputEvent(inputChar);
+        e.Handled = true;
+    }
+
+    protected void OnKeyDown1(KeyEventArgs e)
     {
         if (_presenter == null)
         {
@@ -681,6 +689,11 @@ public class Terminal : TemplatedControl
         {
             e.Handled = true;
         }
+    }
+
+    protected void RaiseInputEvent(string inputChar)
+    {
+        RaiseEvent(new TerminalInputEventArgs(InputEvent, inputChar));
     }
 
     #endregion
