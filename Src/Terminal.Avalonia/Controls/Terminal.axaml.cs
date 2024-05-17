@@ -25,7 +25,7 @@ namespace Terminal.Avalonia.Controls;
 
 [TemplatePart(TextPresenterName, typeof(TerminalTextPresenter))]
 [TemplatePart(ScrollViewerName, typeof(ScrollViewer))]
-public class Terminal : TemplatedControl
+public partial class Terminal : TemplatedControl
 {
     private const string TextPresenterName = "PART_TextPresenter";
     private const string ScrollViewerName = "PART_ScrollViewer";
@@ -178,10 +178,6 @@ public class Terminal : TemplatedControl
         BackgroundProperty.OverrideDefaultValue<Terminal>(new SolidColorBrush(Colors.Black));
 
         TextInputMethodClientRequestedEvent.AddClassHandler<Terminal>((terminal, e) => e.Client = terminal._imClient);
-    }
-
-    public Terminal()
-    {
     }
 
     #region Properties
@@ -364,6 +360,7 @@ public class Terminal : TemplatedControl
             if (newValue is not null)
             {
                 newValue.CollectionChanged += OnCollectionChanged;
+                this._dataConsumer.Push(newValue.ToArray());
             }
 
             if (old is not null)
@@ -376,6 +373,7 @@ public class Terminal : TemplatedControl
     private void OnCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
         if (e.NewItems is null) return;
+        // this._dataConsumer.Push(e.NewItems.OfType<byte>().ToArray());
     }
 
 
