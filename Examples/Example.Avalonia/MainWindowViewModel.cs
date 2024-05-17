@@ -1,4 +1,6 @@
-﻿using System.Text;
+﻿using System.Collections.ObjectModel;
+using System.Linq;
+using System.Text;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Renci.SshNet;
@@ -9,6 +11,8 @@ namespace Example.Avalonia;
 public partial class MainWindowViewModel : ObservableObject
 {
     [ObservableProperty] private string _text = string.Empty;
+
+    [ObservableProperty] private ObservableCollection<byte> _bytes = new();
 
     private readonly ShellStream _shellStream;
 
@@ -29,6 +33,9 @@ public partial class MainWindowViewModel : ObservableObject
 
     private void ShellStreamOnDataReceived(object? sender, ShellDataEventArgs e)
     {
-        this.Text += Encoding.Default.GetString(e.Data);
+        foreach (var b in e.Data)
+        {
+            this.Bytes.Add(b);
+        }
     }
 }

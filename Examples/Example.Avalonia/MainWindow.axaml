@@ -13,5 +13,5 @@
         <example:MainWindowViewModel />
     </Design.DataContext>
 
-    <terminal:Terminal InputCommand="{Binding InputCommand}" Text="{Binding Text}"/>
+    <terminal:Terminal InputCommand="{Binding InputCommand}" Bytes="{Binding Bytes}"/>
 </Window>

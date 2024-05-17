@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.Linq;
 using System.Net.Mime;
 using System.Windows.Input;
@@ -42,6 +44,9 @@ public class Terminal : TemplatedControl
     /// </summary>
     public static readonly StyledProperty<string?> TextProperty =
         TextBlock.TextProperty.AddOwner<Terminal>(new(defaultBindingMode: BindingMode.TwoWay));
+
+    public static readonly StyledProperty<ObservableCollection<byte>> BytesProperty =
+        AvaloniaProperty.Register<Terminal, ObservableCollection<byte>>(nameof(Bytes));
 
     /// <summary>
     /// Defines see <see cref="TextPresenter.LineHeight"/> property.
@@ -175,6 +180,10 @@ public class Terminal : TemplatedControl
         TextInputMethodClientRequestedEvent.AddClassHandler<Terminal>((terminal, e) => e.Client = terminal._imClient);
     }
 
+    public Terminal()
+    {
+    }
+
     #region Properties
 
     /// <summary>
@@ -194,6 +203,12 @@ public class Terminal : TemplatedControl
     {
         get => GetValue(TextProperty);
         set => SetValue(TextProperty, value);
+    }
+
+    public ObservableCollection<byte> Bytes
+    {
+        get => GetValue(BytesProperty);
+        set => SetValue(BytesProperty, value);
     }
 
     /// <summary>
@@ -322,7 +337,6 @@ public class Terminal : TemplatedControl
             CoerceValue(SelectionEndProperty);
 
             RaiseTextChangeEvents();
-
             // UpdatePseudoclasses();
             // UpdateCommandStates();
         }
@@ -344,7 +358,26 @@ public class Terminal : TemplatedControl
         {
             InvalidateMeasure();
         }
+        else if (change.Property == BytesProperty)
+        {
+            var (old, newValue) = change.GetOldAndNewValue<ObservableCollection<byte>>();
+            if (newValue is not null)
+            {
+                newValue.CollectionChanged += OnCollectionChanged;
+            }
+
+            if (old is not null)
+            {
+                old.CollectionChanged -= OnCollectionChanged;
+            }
+        }
     }
+
+    private void OnCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        if (e.NewItems is null) return;
+    }
+
 
     protected override void OnTextInput(TextInputEventArgs e)
     {
